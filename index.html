@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>黒服AI 店長メニュー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one-column phone app opened from the LINE menu; sticky header, bottom tab bar, cards only for groups you act on */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --fg:#1B2230; --muted:#5B6576; --line:#DCE1E9;
+  --accent:#2C5C8C; --accent-soft:#E5EDF6;
+  --good:#2B7656; --good-soft:#E2F1E9; --warn:#9A5B10; --warn-soft:#FAEEDB; --bad:#AE3838; --bad-soft:#F7E3E3;
+  --font:'Zen Kaku Gothic New','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151C; --surface:#19202A; --fg:#E6EAF0; --muted:#9BA5B4; --line:#2B3441;
+  --accent:#7FAAD8; --accent-soft:#1E2C3C;
+  --good:#6CC39C; --good-soft:#17302A; --warn:#E2A95C; --warn-soft:#33281A; --bad:#E78787; --bad-soft:#3A2023;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --fg:#E6EAF0; --muted:#9BA5B4; --line:#2B3441;
+  --accent:#7FAAD8; --accent-soft:#1E2C3C;
+  --good:#6CC39C; --good-soft:#17302A; --warn:#E2A95C; --warn-soft:#33281A; --bad:#E78787; --bad-soft:#3A2023;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums}
+.app{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 120px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin-inline:-16px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.store{font-size:18px;font-weight:700}
+.role{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.proto{margin-top:8px;font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:6px 10px}
+h1{font-size:22px;font-weight:700;margin:20px 0 4px;text-wrap:balance}
+.lead{color:var(--muted);margin:0 0 16px;font-size:14px}
+h2{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin:24px 0 8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);min-width:0}
+.item:first-child{border-top:0}
+button.item{width:100%;background:none;border:0;border-top:1px solid var(--line);font:inherit;color:inherit;text-align:left;cursor:pointer}
+button.item:first-child{border-top:0}
+button.item:hover{background:var(--accent-soft)}
+.item .main{min-width:0;display:flex;flex-direction:column}
+.item .name{font-weight:700}
+.item .sub{font-size:13px;color:var(--muted)}
+.item .val{font-weight:700;white-space:nowrap}
+.chev{color:var(--muted)}
+.chip{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px;margin-left:6px;vertical-align:1px}
+.chip.slide{background:var(--accent-soft);color:var(--accent)}
+.chip.fixed{background:var(--good-soft);color:var(--good)}
+.chip.pending{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.chip.ng{background:var(--bad-soft);color:var(--bad)}
+.big{font-size:32px;font-weight:700;line-height:1.2}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;text-align:right;font-weight:500}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-top:1px solid var(--line)}
+.field:first-child{border-top:0}
+.field label{min-width:0}
+.field .hint{display:block;font-size:12px;color:var(--muted)}
+.inp{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.inp input{width:96px;font:inherit;font-size:16px;text-align:right;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.inp input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.inp span{font-size:13px;color:var(--muted);min-width:1.5em}
+select{font:inherit;font-size:16px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-shrink:0}
+.seg button{font:inherit;font-size:13px;padding:6px 12px;border:0;background:var(--bg);color:var(--muted);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:700}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:12px 16px}
+.days button{font:inherit;padding:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer}
+.days button[aria-pressed="true"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:700}
+.note{font-size:13px;color:var(--muted);margin:8px 2px 0}
+.btn{font:inherit;font-weight:700;border-radius:10px;padding:10px 16px;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--surface)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ok{background:var(--good);color:var(--surface)}
+.btn.ng{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn:focus-visible,.tabs button:focus-visible,button.item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.actions{display:flex;gap:8px;margin-top:12px}
+.actions .btn{flex:1}
+.timeline{display:flex;flex-direction:column}
+.tl{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:8px 0;border-top:1px dashed var(--line);font-size:14px}
+.tl:first-child{border-top:0}
+.tl b{font-weight:700}
+.tl.today b{color:var(--accent)}
+.preview{background:var(--accent-soft);border-radius:12px;padding:14px 16px;margin-top:12px}
+.preview .formula{font-size:13px;color:var(--muted)}
+.preview .result{font-size:22px;font-weight:700;margin-top:4px}
+.savebar{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:25;padding:0 16px}
+.savebar .in{max-width:528px;margin:0 auto;background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 12px 10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.savebar .btn.primary{background:var(--bg);color:var(--fg)}
+.savebar .btn.ghost{color:var(--bg);border-color:transparent}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.tabs button{position:relative;font:inherit;font-size:12px;height:58px;border:0;background:none;color:var(--muted);cursor:pointer}
+.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+.badge{position:absolute;top:8px;right:calc(50% - 26px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:var(--surface);font-size:11px;font-weight:700;line-height:18px;padding:0 5px}
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto}
+.sheet .app{padding-top:env(safe-area-inset-top,0px)}
+.sheet-head{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-inline:-16px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.sheet-head .t{font-weight:700;font-size:17px}
+.modal{position:fixed;inset:0;z-index:30;background:rgba(10,14,20,.45);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.modal .box{width:100%;max-width:528px;background:var(--surface);border-radius:16px;padding:18px 16px;max-height:80vh;overflow:auto}
+.modal h3{margin:0 0 4px;font-size:17px}
+.diff{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
+.diff li{padding:8px 0;border-top:1px solid var(--line)}
+.diff .from{color:var(--muted);text-decoration:line-through}
+.diff .to{font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--fg);color:var(--bg);font-size:13px;border-radius:10px;padding:10px 14px;max-width:calc(100% - 32px)}
+.empty{color:var(--muted);font-size:14px;padding:14px 16px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}to{transform:translate(-50%,0);opacity:1}}}
+.inp input.wide{width:180px;text-align:left}
+.inp select{max-width:150px}
+.tiers{padding:6px 16px 12px}
+.tier{display:flex;align-items:center;gap:6px;padding:6px 0;font-size:14px;flex-wrap:wrap}
+.tier input{width:64px;font:inherit;font-size:16px;text-align:right;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.tier .rm{font:inherit;font-size:13px;background:none;border:0;color:var(--bad);cursor:pointer;margin-left:auto;padding:4px 6px}
+.addrow{font:inherit;font-size:13px;font-weight:700;background:none;border:1px dashed var(--line);border-radius:8px;color:var(--accent);padding:6px 12px;cursor:pointer;margin-top:6px}
+.warnbox{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px}
+.errbox{margin-top:32px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 16px}
+.errbox h1{margin-top:0}
+.store-select{font-size:15px;font-weight:700;padding:4px 8px}
+.btn[disabled]{opacity:.5;cursor:default}
+.hist-what{white-space:pre-line}
+.savebar .btn{white-space:nowrap;padding:8px 12px}
+.savebar .in>span:first-child{white-space:nowrap;font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="top-row"><span id="storeName" class="store">店長メニュー</span><span class="role">黒服AI 店長メニュー</span></div>
+    <div class="proto" id="proto" hidden>試作版：表示しているのはサンプルデータです。保存しても実際の設定やLINEは変わりません。</div>
+  </header>
+  <main id="view"><p class="lead" style="margin-top:24px">読み込んでいます…</p></main>
+</div>
+<div id="savebar"></div>
+<nav class="tabs" aria-label="メニュー"><div class="in" id="tabs"></div></nav>
+<div id="sheet"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script>
+/* =====================================================
+   設定（本番で入れる）
+   LIFF_ID … LINE DevelopersのLIFFアプリのID（例：1234567890-abcdefgh）
+   API_URL … 黒服AI本部のウェブアプリのURL（https://script.google.com/…/exec）
+   どちらかが空のあいだは、サンプルデータで動く試作版になる
+   ===================================================== */
+const CONFIG = { LIFF_ID: '', API_URL: '' };
+const MOCK = !CONFIG.LIFF_ID || !CONFIG.API_URL;
+
+/* ===== 小さな道具 ===== */
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD = ['日','月','火','水','木','金','土'];
+const toNum = v => { const t = String(v ?? '').replace(/[円,\s￥¥%％]/g, '').replace(/^＋/, '+').replace(/^[−－ー]/, '-'); if (t === '') return null; const n = Number(t); return isNaN(n) ? null : n; };
+const yen = n => n === null || n === undefined ? '—' : Math.round(n).toLocaleString('ja-JP') + '円';
+function pctOf(v){ const raw = String(v ?? '').trim(); if (raw === '') return null; const n = toNum(raw); if (n === null) return null; return /[%％]/.test(raw) || n > 1 ? n : Math.round(n * 1000) / 10; }
+function parseTiers(str){ return String(str || '').split(/[,、\s]+/).map(x => x.split(/[:：]/)).filter(x => x.length === 2).map(([p,y]) => [toNum(p), toNum(y)]); }
+function cleanTiers(arr){ return arr.filter(t => t[0] !== null && t[1] !== null).sort((a,b) => a[0]-b[0]); }
+function tiersToStr(arr){ return arr.map(([p,a]) => `${p ?? ''}:${a ?? ''}`).join(','); }
+function tierAdd(points, tiers, step){
+  let add = 0;
+  tiers.forEach(t => { if (points >= t[0]) add = t[1]; });
+  if (tiers.length && step > 0) { const last = tiers[tiers.length-1]; const beyond = last[0] + 10; if (points >= beyond) add = last[1] + (Math.floor((points - beyond) / 10) + 1) * step; }
+  return add;
+}
+const TIMES = Array.from({length:48}, (_,i) => `${Math.floor(i/2)}:${i%2 ? '30' : '00'}`);
+
+/* ===== 通信 ===== */
+let idToken = '';
+async function api(action, extra){
+  if (MOCK) return mockApi(action, extra || {});
+  const body = Object.assign({ action, idToken, storeId: S.storeId }, extra || {});
+  const res = await fetch(CONFIG.API_URL + '?api=1', { method:'POST', body: JSON.stringify(body) });
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error || '通信に失敗しました。');
+  return j;
+}
+function loadScript(src){ return new Promise((ok, ng) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ng(new Error('LINEの部品を読み込めませんでした。')); document.head.appendChild(s); }); }
+
+/* ===== サンプルデータ（試作版のときだけ使う。設定の初期値は黒服AI本部の設定シートと同じ） ===== */
+const DEF = {
+  'シフトの周期':'半月','1週・2週の開始曜日':'月','2週の基準日':'','依頼：開始の何日前':'6','依頼：時刻':'14:00','締切：開始の何日前':'3','締切：時刻':'14:00',
+  'まとめ通知：開始の何日前':'2','まとめ通知：時刻':'15:00','確定シフト送信：開始の何日前':'1','確定シフト送信：時刻':'15:00','△の前日確認：時刻':'15:00',
+  '少ない日の目安（○の人数）':'','勤務時間の単位（分）':'15','給料の締め':'月末','指名バック（1本）':'500','本指名売上バック率':'30%','フリー売上バック率':'10%',
+  '厚生費率（標準）':'15%','同伴の時給加算':'500','予約本指名の時給加算（1本）':'100','ポイント：予約本指名':'1','ポイント：本指名':'1','ポイント：本場内':'0.5',
+  'ポイント：場内':'0.5','ポイント：同伴':'3','段階表（標準）':'10:300,21:400,31:500,41:600,51:700','段階表のその先（10ポイントごと）':'100','体験の時給（一律）':'',
+  '体験の厚生費率':'20%','出退勤のLINE入力（キャスト本人）':'使わない','日報チェック：時刻':'18:00','給料の自動計算：時刻':'15:00','月報：送る時刻':'12:00',
+  '定休曜日':'','臨時休業日':'','臨時営業日':'','営業日の区切り':'4:00'
+};
+const cast = (id, name, type, g, b, k, p, c) => ({ キャストID:id, 源氏名:name, 在籍状態:'在籍', 時給タイプ:type, 保証時給:g, スライドのベース時給:b, '段階表（個別・空欄なら標準）':'', 本指名売上バック率:'', フリー売上バック率:'', 厚生費率:k, '調整（加算は＋、減算は−）':'', '開始時のポイント（最初の半月だけ）':'', メモ:'', prevPts:p, prevFromStart:false, curPts:c });
+const M = {
+  store:{ id:'nana', name:'Lounge NANA（例）' },
+  settings: clone(DEF), defaults: clone(DEF),
+  casts:[ cast('K001','ゆな','スライド','','4000','10%',22,14), cast('K002','みお','保証','5000','','15%',9,6), cast('K003','さき','スライド','','4500','20%',34,19),
+          cast('K004','りな','スライド','','4000','',5,3), cast('K005','あい','保証','6000','','15%',12,8), cast('K006','ねね','','','','',0,0) ],
+  halves:{ prev:'9月後期', cur:'10月前期', next:'10月後期' },
+  shift:{ label:'10/16（金）〜10/31（土）', schedule:[{type:'依頼',at:'10/10（土） 14:00',done:false},{type:'締切',at:'10/13（火） 14:00',done:false},{type:'まとめ',at:'10/14（水） 15:00',done:false},{type:'確定',at:'10/15（木） 15:00',done:false}] },
+  requests:[ {id:'R1',at:'2026/10/09 21:12',name:'ゆな',period:'10/1（木）〜10/15（木）',text:'10/13（火） ○ → なし',status:'承認待ち',by:'',byAt:''},
+             {id:'R2',at:'2026/10/09 23:40',name:'りな',period:'10/1（木）〜10/15（木）',text:'10/14（水） △ → ○',status:'承認待ち',by:'',byAt:''} ],
+  history:[ {at:'2026/10/09 18:00',who:'運営',target:'店舗の設定',what:'初期設定'} ]
+};
+async function mockApi(action, x){
+  await new Promise(r => setTimeout(r, 250));
+  if (action === 'init') return { ok:true, stores:[{ id:'nana', name:M.store.name }] };
+  const stamp = () => { const d = new Date(); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+  let message;
+  if (action === 'saveSettings') { const lines = Object.keys(x.changes).map(k => `${k}：${M.settings[k] || '（空欄）'} → ${x.changes[k] || '（空欄）'}`); Object.assign(M.settings, x.changes); M.history.unshift({at:stamp(),who:'あなた',target:'店舗の設定',what:lines.join('\n')}); message = '保存しました（試作版）'; }
+  if (action === 'saveCast') { const c = M.casts.find(c => c.キャストID === x.castId); const lines = Object.keys(x.changes).map(k => `${k}：${c[k] || '（空欄）'} → ${x.changes[k] || '（空欄）'}`); Object.assign(c, x.changes); M.history.unshift({at:stamp(),who:'あなた',target:`${c.源氏名}の給与設定`,what:lines.join('\n')}); message = '保存しました（試作版）'; }
+  if (action === 'decide') { const r = M.requests.find(r => r.id === x.rid); r.status = x.decision === 'ok' ? '承認' : '却下'; r.by = 'あなた'; r.byAt = stamp(); message = `${r.name}さんの申請を${r.status}しました（試作版のため、LINEには送られません）`; }
+  return Object.assign({ ok:true, message }, clone(M));
+}
+
+/* ===== 状態 ===== */
+let DATA = null;
+const S = { tab:'home', stores:[], storeId:'', setDraft:null, castId:null, castDraft:null, review:null, busy:false };
+const PAYKEYS = ['時給タイプ','保証時給','スライドのベース時給','段階表（個別・空欄なら標準）','本指名売上バック率','フリー売上バック率','厚生費率','調整（加算は＋、減算は−）','開始時のポイント（最初の半月だけ）','メモ'];
+const setting = k => (S.setDraft && k in S.setDraft) ? S.setDraft[k] : DATA.settings[k];
+const effective = k => { const v = DATA.settings[k]; return v !== '' && v !== undefined ? v : DATA.defaults[k]; };
+const pending = () => DATA.requests.filter(r => r.status === '承認待ち');
+
+/* ===== 入力部品（どの項目を画面に出したかを記録して、保存前の確認に使う） ===== */
+let FIELDS = [];
+const reg = (scope, key, label, kind) => FIELDS.push({ scope, key, label, kind });
+const draftOf = scope => scope === 'cast' ? S.castDraft : S.setDraft;
+function valOf(scope, key){ const d = draftOf(scope); return d ? (d[key] ?? '') : ''; }
+function inputField(scope, key, label, kind, opt){
+  opt = opt || {}; reg(scope, key, label, kind);
+  const id = `f-${scope}-${FIELDS.length}`;
+  let v = valOf(scope, key);
+  const unit = {yen:'円', pct:'%', num:opt.unit || '', text:''}[kind] ?? '';
+  if (kind === 'pct') { const p = pctOf(v); v = p === null ? '' : p; }
+  if (kind === 'yen' || kind === 'num') v = String(v).replace(/,/g, '');
+  const ph = opt.placeholder ?? (DATA.defaults[key] ? `標準 ${DATA.defaults[key]}` : '空欄');
+  return `<div class="field"><label for="${id}">${esc(label)}${opt.hint ? `<span class="hint">${esc(opt.hint)}</span>` : ''}</label>
+    <div class="inp"><input id="${id}" class="${kind === 'text' ? 'wide' : ''}" ${kind === 'text' ? '' : 'inputmode="decimal"'} data-scope="${scope}" data-key="${esc(key)}" data-kind="${kind}" value="${esc(v)}" placeholder="${esc(ph)}">${unit ? `<span>${unit}</span>` : ''}</div></div>`;
+}
+function selectField(scope, key, label, options, opt){
+  opt = opt || {}; reg(scope, key, label, 'select');
+  const id = `f-${scope}-${FIELDS.length}`;
+  const v = valOf(scope, key);
+  const opts = options.slice(); if (v !== '' && !opts.some(o => o[0] === v)) opts.unshift([v, v]);
+  return `<div class="field"><label for="${id}">${esc(label)}${opt.hint ? `<span class="hint">${esc(opt.hint)}</span>` : ''}</label>
+    <div class="inp"><select id="${id}" data-scope="${scope}" data-key="${esc(key)}" data-kind="select">${opts.map(([val,t]) => `<option value="${esc(val)}"${val === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div></div>`;
+}
+function segField(scope, key, label, options, opt){
+  opt = opt || {}; reg(scope, key, label, 'seg');
+  const v = valOf(scope, key);
+  return `<div class="field"><span>${esc(label)}${opt.hint ? `<span class="hint">${esc(opt.hint)}</span>` : ''}</span><div class="seg" role="group" aria-label="${esc(label)}">
+    ${options.map(([val,t]) => `<button type="button" data-seg="${scope}" data-key="${esc(key)}" data-v="${esc(val)}" aria-pressed="${v === val}">${esc(t)}</button>`).join('')}</div></div>`;
+}
+const timeOpts = off => (off ? [['使わない','使わない']] : []).concat(TIMES.map(t => [t, t]));
+const dayOpts = () => Array.from({length:14}, (_,i) => [String(i+1), `${i+1}日前`]);
+function tierEditor(scope, key, label){
+  reg(scope, key, label, 'tiers');
+  const rows = parseTiers(valOf(scope, key));
+  return `<div class="tiers">${rows.map(([p,a], i) => `<div class="tier"><input inputmode="decimal" aria-label="${i+1}段目のポイント" data-tscope="${scope}" data-tkey="${esc(key)}" data-i="${i}" data-f="0" value="${p ?? ''}">ポイント以上で
+      ＋<input inputmode="decimal" aria-label="${i+1}段目の加算額" data-tscope="${scope}" data-tkey="${esc(key)}" data-i="${i}" data-f="1" value="${a ?? ''}">円<button type="button" class="rm" data-trm="${scope}" data-tkey="${esc(key)}" data-i="${i}">削除</button></div>`).join('')}
+    <button type="button" class="addrow" data-tadd="${scope}" data-tkey="${esc(key)}">＋ 段階を追加</button></div>`;
+}
+function normalize(kind, raw){
+  const t = String(raw ?? '').trim();
+  if (kind === 'pct') { const n = toNum(t); return t === '' ? '' : (n === null ? t : `${n}%`); }
+  if (kind === 'yen' || kind === 'num') { const n = toNum(t); return t === '' ? '' : (n === null ? t : String(n)); }
+  if (kind === 'tiers') return t === '' ? '' : tiersToStr(cleanTiers(parseTiers(t)));
+  return t;
+}
+function changesOf(scope){
+  const orig = scope === 'cast' ? DATA.casts.find(c => c.キャストID === S.castId) : DATA.settings;
+  const out = [], map = {};
+  const seen = {};
+  FIELDS.filter(f => f.scope === scope).forEach(f => {
+    if (seen[f.key]) return; seen[f.key] = true;
+    const after = normalize(f.kind, draftOf(scope)[f.key]);
+    const before = normalize(f.kind, orig[f.key]);
+    if (after !== before) { out.push({ label:f.label, from: orig[f.key] || '（空欄）', to: after || '（空欄）' }); map[f.key] = after; }
+  });
+  // 画面に出していない項目でも、下書きで変わったもの（段階表を「標準」に戻したときなど）
+  const d = draftOf(scope);
+  Object.keys(d).forEach(k => { if (seen[k] || !(k in orig) || ['prevPts','curPts','prevFromStart','キャストID','源氏名','在籍状態'].includes(k)) return; if (String(d[k] ?? '') !== String(orig[k] ?? '')) { out.push({ label:k, from: orig[k] || '（空欄）', to: d[k] || '（空欄）' }); map[k] = d[k]; } });
+  return { list: out, map };
+}
+
+/* ===== 画面 ===== */
+function home(){
+  const p = pending();
+  return `<h1>店長メニュー</h1><p class="lead">${esc(DATA.halves.cur)}の営業中です。</p>
+  <h2>シフト変更の承認待ち</h2>
+  <div class="card"><div class="big">${p.length}件</div>
+    <div class="note" style="margin:4px 0 0">確定したあとのシフトの追加・変更です。グループのカードからでも、ここからでも承認できます。</div>
+    ${p.length ? `<div class="actions"><button class="btn primary" data-tab="approve">申請を見る</button></div>` : ''}</div>
+  <h2>次のシフト回収（${esc(DATA.shift.label)}）</h2>
+  <div class="card"><div class="timeline">${DATA.shift.schedule.map(x => `<div class="tl"><b>${esc(x.at)}</b><span>${esc({依頼:'全キャストに依頼',締切:'締切・未提出の子に再通知',まとめ:'スタッフグループにまとめ',確定:'確定シフトを全員に送信'}[x.type] || x.type)}${x.done ? '（送信済み）' : ''}</span></div>`).join('')}</div></div>
+  <h2>最近の変更</h2>
+  <div class="list">${DATA.history.length ? DATA.history.slice(0,8).map(h => `<div class="item"><div class="main"><span class="name">${esc(h.target)}</span><span class="sub hist-what">${esc(h.what)}</span><span class="sub">${esc(h.at)}・${esc(h.who)}</span></div></div>`).join('') : '<div class="empty">まだ変更はありません。</div>'}</div>`;
+}
+
+function approve(){
+  const p = pending(), done = DATA.requests.filter(r => r.status !== '承認待ち');
+  const card = r => `<div class="card"><div><b>${esc(r.name)}</b><span class="chip ${r.status === '承認待ち' ? 'pending' : r.status === '承認' ? 'ok' : 'ng'}">${esc(r.status)}</span></div>
+    <div class="hist-what" style="font-size:16px;font-weight:700;margin-top:4px">${esc(r.text)}</div>
+    <div class="note" style="margin:2px 0 0">申請 ${esc(r.at)}${r.by ? `・対応 ${esc(r.by)}（${esc(r.byAt)}）` : ''}</div>
+    ${r.status === '承認待ち' ? `<div class="actions"><button class="btn ng" data-req="${esc(r.id)}" data-act="ng"${S.busy ? ' disabled' : ''}>却下</button><button class="btn ok" data-req="${esc(r.id)}" data-act="ok"${S.busy ? ' disabled' : ''}>承認</button></div>` : ''}</div>`;
+  return `<h1>シフト変更の承認</h1><p class="lead">確定したシフトの追加・変更は、承認されるまでシフト表に入りません。結果は本人とスタッフグループに届きます。</p>
+  <h2>承認待ち（${p.length}件）</h2><div class="stack">${p.length ? p.map(card).join('') : '<div class="card empty">承認待ちの申請はありません。</div>'}</div>
+  ${done.length ? `<h2>対応済み（新しい順）</h2><div class="stack">${done.map(card).join('')}</div>` : ''}`;
+}
+
+function wageOf(c, src){
+  const type = src['時給タイプ'];
+  if (type === '保証') { const g = toNum(src['保証時給']); return { type, now:g, next:g }; }
+  if (type !== 'スライド') return { type:'', now:null, next:null };
+  const base = toNum(src['スライドのベース時給']) || 0;
+  const tiers = cleanTiers(parseTiers(src['段階表（個別・空欄なら標準）'] || effective('段階表（標準）')));
+  const step = toNum(effective('段階表のその先（10ポイントごと）')) || 0;
+  const prevPts = c.prevFromStart ? Math.floor(toNum(src['開始時のポイント（最初の半月だけ）']) || 0) : c.prevPts;
+  return { type, base, prevPts, curPts:c.curPts, addNow:tierAdd(prevPts, tiers, step), addNext:tierAdd(c.curPts, tiers, step),
+    now: base + tierAdd(prevPts, tiers, step), next: base + tierAdd(c.curPts, tiers, step) };
+}
+
+function casts(){
+  return `<h1>キャストの給料設定</h1><p class="lead">タップすると、時給・バック率・厚生費などを変えられます。</p>
+  <div class="list">${DATA.casts.map(c => { const w = wageOf(c, c); const unset = !w.type || w.now === null || (w.type === 'スライド' && !toNum(c['スライドのベース時給']));
+    return `<button class="item" data-cast="${esc(c.キャストID)}"><span class="main"><span class="name">${esc(c.源氏名)}${w.type ? `<span class="chip ${w.type === 'スライド' ? 'slide' : 'fixed'}">${esc(w.type)}</span>` : '<span class="chip pending">未設定</span>'}</span>
+      <span class="sub">${w.type === 'スライド' ? `${esc(DATA.halves.prev)} ${w.prevPts}pt・今期ここまで ${w.curPts}pt` : (c.在籍状態 !== '在籍' ? esc(c.在籍状態) : '　')}</span></span>
+      <span class="val">${unset ? '<span class="sub">時給を入れてください</span>' : yen(w.now)} <span class="chev" aria-hidden="true">›</span></span></button>`; }).join('')}</div>
+  <p class="note">右の金額は${esc(DATA.halves.cur)}の時給です（同伴・予約本指名の加算は含みません）。</p>`;
+}
+
+function rules(){
+  if (!S.setDraft) S.setDraft = clone(DATA.settings);
+  const sc = 'settings';
+  return `<h1>給料ルール</h1><p class="lead">店舗の全キャストに使うルールです。キャストごとに違う値は「キャスト」タブで設定します。</p>
+  <h2>スライドの段階表（標準）</h2>
+  <div class="list">${tierEditor(sc,'段階表（標準）','段階表（標準）')}${inputField(sc,'段階表のその先（10ポイントごと）','最後の段階のその先','yen',{hint:'10ポイントごとに足す金額'})}</div>
+  <p class="note">前の半月のポイントで、次の半月の時給に足します。半端なポイントは切り捨て。</p>
+  <h2>スライドのポイント（1本・1回あたり）</h2>
+  <div class="list">${inputField(sc,'ポイント：予約本指名','予約本指名','num',{unit:'pt'})}${inputField(sc,'ポイント：本指名','本指名','num',{unit:'pt'})}${inputField(sc,'ポイント：本場内','本場内','num',{unit:'pt'})}${inputField(sc,'ポイント：場内','場内','num',{unit:'pt'})}${inputField(sc,'ポイント：同伴','同伴','num',{unit:'pt'})}</div>
+  <h2>その日の時給への加算</h2>
+  <div class="list">${inputField(sc,'同伴の時給加算','同伴した日','yen',{hint:'保証・スライドの全員'})}${inputField(sc,'予約本指名の時給加算（1本）','予約本指名 1本ごと','yen',{hint:'スライドの子だけ'})}</div>
+  <h2>バック（標準）</h2>
+  <div class="list">${inputField(sc,'指名バック（1本）','指名バック 1本','yen',{hint:'予約本指名・本指名・本場内・場内'})}${inputField(sc,'本指名売上バック率','本指名売上','pct')}${inputField(sc,'フリー売上バック率','フリー売上','pct')}</div>
+  <h2>厚生費（標準）</h2>
+  <div class="list">${inputField(sc,'厚生費率（標準）','厚生費率','pct',{hint:'（基本給＋歩合給）にかける'})}</div>
+  <h2>体験入店</h2>
+  <div class="list">${inputField(sc,'体験の時給（一律）','体験の時給','yen',{hint:'空欄なら日報に書いた金額',placeholder:'日報で指定'})}${inputField(sc,'体験の厚生費率','体験の厚生費率','pct')}</div>
+  <h2>締め・勤務時間</h2>
+  <div class="list">${segField(sc,'給料の締め','給料の締め',[['月末','月末'],['15日・月末','15日・月末']])}${inputField(sc,'勤務時間の単位（分）','勤務時間の単位','num',{unit:'分',hint:'端数は切り捨て'})}</div>`;
+}
+
+function shop(){
+  if (!S.setDraft) S.setDraft = clone(DATA.settings);
+  const sc = 'settings', cycle = setting('シフトの周期') || '半月';
+  const closed = String(setting('定休曜日') || '').split(/[,、\s]+/).filter(Boolean);
+  reg(sc,'定休曜日','定休曜日','text');
+  return `<h1>店舗の設定</h1><p class="lead">シフト回収の日程、定休日、自動のお知らせです。</p>
+  <h2>定休日</h2>
+  <div class="card" style="padding:0"><div class="days" role="group" aria-label="定休曜日">${WD.map(w => `<button type="button" data-day="${w}" aria-pressed="${closed.includes(w)}">${w}</button>`).join('')}</div></div>
+  <div class="list" style="margin-top:10px">${inputField(sc,'臨時休業日','臨時休業日','text',{hint:'例：2026/12/31,2027/1/1',placeholder:'なし'})}${inputField(sc,'臨時営業日','臨時営業日','text',{hint:'定休日だけど営業する日',placeholder:'なし'})}</div>
+  <h2>シフトの期間</h2>
+  <div class="list">${segField(sc,'シフトの周期','シフトの周期',[['半月','半月'],['1週','1週'],['2週','2週']])}
+    ${cycle !== '半月' ? selectField(sc,'1週・2週の開始曜日','開始曜日',['月','火','水','木','金','土','日'].map(w => [w, w])) : ''}
+    ${cycle === '2週' ? inputField(sc,'2週の基準日','2週の基準日','text',{hint:'どこか1つの期間の開始日',placeholder:'例：2026/10/5'}) : ''}</div>
+  <h2>シフト回収の日程（期間が始まる何日前か）</h2>
+  <div class="list">${selectField(sc,'依頼：開始の何日前','全キャストに依頼',dayOpts())}${selectField(sc,'依頼：時刻','依頼の時刻',timeOpts(false))}
+    ${selectField(sc,'締切：開始の何日前','締切（未提出の子に再通知）',dayOpts())}${selectField(sc,'締切：時刻','締切の時刻',timeOpts(false))}
+    ${selectField(sc,'まとめ通知：開始の何日前','スタッフグループにまとめ',dayOpts())}${selectField(sc,'まとめ通知：時刻','まとめの時刻',timeOpts(false))}
+    ${selectField(sc,'確定シフト送信：開始の何日前','確定シフトを送信',dayOpts())}${selectField(sc,'確定シフト送信：時刻','送信の時刻',timeOpts(false))}
+    ${selectField(sc,'△の前日確認：時刻','△の子への前日確認',timeOpts(false))}
+    ${inputField(sc,'少ない日の目安（○の人数）','少ない日の目安','num',{unit:'人',hint:'○がこの人数未満の日に⚠',placeholder:'なし'})}</div>
+  <h2>営業日</h2>
+  <div class="list">${selectField(sc,'営業日の区切り','営業日の区切り',timeOpts(false),{hint:'この時刻より前は前日の営業'})}</div>
+  <h2>自動のお知らせ（スタッフグループ）</h2>
+  <div class="list">${selectField(sc,'日報チェック：時刻','日報の入れ忘れチェック',timeOpts(true))}${selectField(sc,'給料の自動計算：時刻','締め日の翌日に給料計算',timeOpts(true))}${selectField(sc,'月報：送る時刻','毎月1日の月報',timeOpts(true))}
+    ${segField(sc,'出退勤のLINE入力（キャスト本人）','キャスト本人の出勤・退勤LINE',[['使わない','使わない'],['使う','使う']])}</div>
+  <p class="note">保存すると、次の自動の見回り（1時間以内）から使われます。</p>`;
+}
+
+function castSheet(){
+  const orig = DATA.casts.find(c => c.キャストID === S.castId), d = S.castDraft, sc = 'cast';
+  const w = wageOf(orig, d), type = d['時給タイプ'];
+  const ownTiers = d['段階表（個別・空欄なら標準）'] !== '' && d['段階表（個別・空欄なら標準）'] !== undefined;
+  const dohan = toNum(effective('同伴の時給加算')), yoyaku = toNum(effective('予約本指名の時給加算（1本）'));
+  let preview = '';
+  if (type === 'スライド') preview = `<div class="preview">
+      <div class="formula">${esc(DATA.halves.prev)}のポイント ${w.prevPts}pt${orig.prevFromStart ? '（開始時のポイント）' : ''} → 加算 ${yen(w.addNow)}</div>
+      <div class="result">${esc(DATA.halves.cur)}の時給 ${yen(w.now)}</div>
+      <div class="formula" style="margin-top:8px">今期ここまで ${w.curPts}pt → ${esc(DATA.halves.next)}の見込み ${yen(w.next)}</div>
+      <div class="formula" style="margin-top:4px">同伴の日は＋${yen(dohan)}、予約本指名1本ごとに＋${yen(yoyaku)}</div></div>`;
+  else if (type === '保証') preview = `<div class="preview"><div class="result">保証時給 ${yen(w.now)}</div><div class="formula" style="margin-top:4px">ポイントで時給は変わりません。同伴の日は＋${yen(dohan)}</div></div>`;
+  return `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(orig.源氏名)}の給与設定"><div class="app">
+    <div class="sheet-head"><button class="btn ghost" data-close="1">閉じる</button><span class="t">${esc(orig.源氏名)}</span><span style="width:64px"></span></div>
+    <h2>時給</h2>
+    <div class="list">${segField(sc,'時給タイプ','時給の種類',[['スライド','スライド'],['保証','保証']])}
+      ${type === '保証' ? inputField(sc,'保証時給','保証時給','yen',{placeholder:'未設定'}) : ''}
+      ${type === 'スライド' ? inputField(sc,'スライドのベース時給','ベース時給','yen',{placeholder:'未設定'}) : ''}</div>
+    ${preview}
+    ${type === 'スライド' ? `<h2>段階表</h2><div class="list"><div class="field"><span>使う段階表</span><div class="seg" role="group" aria-label="使う段階表"><button type="button" data-owntier="0" aria-pressed="${!ownTiers}">お店の標準</button><button type="button" data-owntier="1" aria-pressed="${ownTiers}">この子だけ</button></div></div>
+      ${ownTiers ? tierEditor(sc,'段階表（個別・空欄なら標準）','段階表（この子だけ）') : ''}</div>
+      ${orig.prevFromStart ? `<div class="list" style="margin-top:10px">${inputField(sc,'開始時のポイント（最初の半月だけ）','開始時のポイント','num',{unit:'pt',hint:'日報がない最初の半月だけ使う',placeholder:'0'})}</div>` : ''}` : ''}
+    <h2>バック率・厚生費（空欄ならお店の標準）</h2>
+    <div class="list">${inputField(sc,'本指名売上バック率','本指名売上','pct',{placeholder:`標準 ${effective('本指名売上バック率')}`})}${inputField(sc,'フリー売上バック率','フリー売上','pct',{placeholder:`標準 ${effective('フリー売上バック率')}`})}${inputField(sc,'厚生費率','厚生費率','pct',{placeholder:`標準 ${effective('厚生費率（標準）')}`})}</div>
+    <h2>そのほか</h2>
+    <div class="list">${inputField(sc,'調整（加算は＋、減算は−）','毎回の調整額','yen',{hint:'減らすときは −1000 のように',placeholder:'なし'})}${inputField(sc,'メモ','メモ','text',{placeholder:'なし'})}</div>
+  </div></div>`;
+}
+
+/* ===== 描画 ===== */
+const TABS = [['home','ホーム'],['approve','承認'],['casts','キャスト'],['rules','給料ルール'],['shop','店舗']];
+function dirty(){
+  if (S.castId) return changesOf('cast').list.length > 0;
+  if ((S.tab === 'rules' || S.tab === 'shop') && S.setDraft) return changesOf('settings').list.length > 0;
+  return false;
+}
+function renderSavebar(){
+  document.getElementById('savebar').innerHTML = dirty()
+    ? `<div class="savebar"><div class="in"><span>変更があります</span><span style="display:flex;gap:4px"><button class="btn ghost" data-discard="1">取り消す</button><button class="btn primary" data-review="1">確認して保存</button></span></div></div>` : '';
+}
+function render(){
+  FIELDS = [];
+  document.getElementById('proto').hidden = !MOCK;
+  const head = document.getElementById('storeName');
+  head.innerHTML = S.stores.length > 1
+    ? `<select class="store-select" id="storeSel" aria-label="店舗">${S.stores.map(s => `<option value="${esc(s.id)}"${s.id === S.storeId ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select>`
+    : esc(DATA.store.name);
+  document.getElementById('view').innerHTML = {home, approve, casts, rules, shop}[S.tab]();
+  const n = pending().length;
+  document.getElementById('tabs').innerHTML = TABS.map(([k,t]) => `<button type="button" data-tab="${k}"${S.tab === k ? ' aria-current="page"' : ''}>${t}${k === 'approve' && n ? `<span class="badge">${n}</span>` : ''}</button>`).join('');
+  document.getElementById('sheet').innerHTML = S.castId ? castSheet() : '';
+  document.getElementById('modal').innerHTML = S.review ? reviewModal() : '';
+  renderSavebar();
+}
+function reviewModal(){
+  const r = S.review;
+  return `<div class="modal" role="dialog" aria-modal="true" aria-label="変更の確認"><div class="box">
+    <h3>${esc(r.title)}</h3>
+    <ul class="diff">${r.list.map(x => `<li>${esc(x.label)}<br><span class="from">${esc(x.from)}</span> → <span class="to">${esc(x.to)}</span></li>`).join('')}</ul>
+    <div class="warnbox">${esc(r.warn)}</div>
+    <div class="actions"><button class="btn ghost" data-cancel-review="1">戻る</button><button class="btn primary" data-confirm="1"${S.busy ? ' disabled' : ''}>${S.busy ? '保存中…' : '保存する'}</button></div></div></div>`;
+}
+let toastTimer;
+function toast(msg){ const el = document.getElementById('toast'); el.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => el.innerHTML = '', 3600); }
+function showError(msg){
+  document.getElementById('view').innerHTML = `<div class="errbox"><h1>開けませんでした</h1><p>${esc(msg)}</p><div class="actions"><button class="btn primary" data-reload="1">もう一度読み込む</button></div></div>`;
+  document.getElementById('tabs').innerHTML = ''; document.getElementById('savebar').innerHTML = '';
+}
+
+/* ===== 操作 ===== */
+function refocus(id){ const el = document.getElementById(id); if (!el) return; el.focus(); try { const n = el.value.length; el.setSelectionRange(n, n); } catch (_) {} }
+document.addEventListener('input', e => {
+  const t = e.target, ds = t.dataset || {};
+  if (ds.scope) { draftOf(ds.scope)[ds.key] = t.value; if (ds.scope === 'cast') { const id = t.id; render(); refocus(id); } else renderSavebar(); return; }
+  if (ds.tscope) {
+    const d = draftOf(ds.tscope), rows = parseTiers(d[ds.tkey]);
+    if (rows[ds.i]) { rows[ds.i][Number(ds.f)] = t.value.trim() === '' ? null : toNum(t.value); d[ds.tkey] = tiersToStr(rows); }
+    if (ds.tscope === 'cast') { const sel = `[data-tscope="cast"][data-i="${ds.i}"][data-f="${ds.f}"]`; render(); const el = document.querySelector(sel); if (el) { el.focus(); } } else renderSavebar();
+  }
+});
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.scope && t.tagName === 'SELECT') { draftOf(t.dataset.scope)[t.dataset.key] = t.value; renderSavebar(); }
+  if (t.id === 'storeSel') { S.storeId = t.value; S.tab = 'home'; S.setDraft = null; await reload(); }
+});
+async function reload(){ try { DATA = await api('load'); render(); } catch (err) { showError(err.message); } }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const ds = b.dataset;
+  if (ds.reload) { location.reload(); return; }
+  if (ds.tab) { if (dirty() && !S.castId) toast('保存していない変更を取り消しました'); S.tab = ds.tab; S.setDraft = null; render(); window.scrollTo(0, 0); return; }
+  if (ds.seg) { draftOf(ds.seg)[ds.key] = ds.v; render(); return; }
+  if (ds.day) { const list = String(S.setDraft['定休曜日'] || '').split(/[,、\s]+/).filter(Boolean); const i = list.indexOf(ds.day); i < 0 ? list.push(ds.day) : list.splice(i, 1); S.setDraft['定休曜日'] = WD.filter(w => list.includes(w)).join(','); render(); return; }
+  if (ds.tadd) { const d = draftOf(ds.tadd), rows = parseTiers(d[ds.tkey]); const last = rows[rows.length-1]; rows.push([last && last[0] !== null ? last[0] + 10 : 10, last && last[1] !== null ? last[1] + 100 : 300]); d[ds.tkey] = tiersToStr(rows); render(); return; }
+  if (ds.trm) { const d = draftOf(ds.trm), rows = parseTiers(d[ds.tkey]); rows.splice(Number(ds.i), 1); d[ds.tkey] = tiersToStr(rows); render(); return; }
+  if (ds.owntier) { S.castDraft['段階表（個別・空欄なら標準）'] = ds.owntier === '1' ? (effective('段階表（標準）') || '10:300') : ''; render(); return; }
+  if (ds.cast) { S.castId = ds.cast; const c = DATA.casts.find(c => c.キャストID === ds.cast); S.castDraft = {}; PAYKEYS.forEach(k => S.castDraft[k] = c[k] ?? ''); render(); return; }
+  if (ds.close) { S.castId = null; S.castDraft = null; render(); return; }
+  if (ds.discard) { if (S.castId) { const c = DATA.casts.find(c => c.キャストID === S.castId); PAYKEYS.forEach(k => S.castDraft[k] = c[k] ?? ''); } else S.setDraft = null; render(); toast('変更を取り消しました'); return; }
+  if (ds.review) {
+    if (S.castId) { const c = DATA.casts.find(c => c.キャストID === S.castId), ch = changesOf('cast'); S.review = { scope:'cast', title:`${c.源氏名}の給与設定を保存しますか？`, list:ch.list, map:ch.map, warn:'保存すると、すぐに反映されます。まだ計算していない給料（今期分）の計算にも使われます。' }; }
+    else { const ch = changesOf('settings'); S.review = { scope:'settings', title:'設定を保存しますか？', list:ch.list, map:ch.map, warn: S.tab === 'rules' ? '保存すると、すぐに反映されます。まだ計算していない給料（今期分）の計算にも、全キャスト分使われます。' : '保存すると、次の自動の見回り（1時間以内）から使われます。' }; }
+    render(); return;
+  }
+  if (ds.cancelReview) { S.review = null; render(); return; }
+  if (ds.confirm) {
+    S.busy = true; render();
+    try {
+      const r = S.review;
+      DATA = r.scope === 'cast' ? await api('saveCast', { castId:S.castId, changes:r.map }) : await api('saveSettings', { changes:r.map });
+      if (r.scope === 'cast') { S.castId = null; S.castDraft = null; } else S.setDraft = null;
+      S.review = null; S.busy = false; render(); toast(DATA.message || '保存しました');
+    } catch (err) { S.busy = false; render(); toast(err.message); }
+    return;
+  }
+  if (ds.req) {
+    S.busy = true; render();
+    try { DATA = await api('decide', { rid:ds.req, decision:ds.act }); S.busy = false; render(); toast(DATA.message || '処理しました'); }
+    catch (err) { S.busy = false; render(); toast(err.message); }
+    return;
+  }
+});
+
+/* ===== 起動 ===== */
+async function boot(){
+  try {
+    if (!MOCK) {
+      await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
+      await liff.init({ liffId: CONFIG.LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+      idToken = liff.getIDToken();
+    }
+    const init = await api('init');
+    S.stores = init.stores;
+    const want = new URLSearchParams(location.search).get('s');
+    S.storeId = (S.stores.find(s => s.id === want) || S.stores[0]).id;
+    DATA = await api('load');
+    render();
+  } catch (err) { showError(err.message); }
+}
+boot();
+</script>
+</body>
+</html>
